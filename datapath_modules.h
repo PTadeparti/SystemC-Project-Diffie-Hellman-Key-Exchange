@@ -159,7 +159,7 @@ SC_MODULE(requiredPart)
 	sc_signal<NN_HALF_DIGIT> cLow, cHigh;
 
 	// Internal signals for ease of use
-	sc_signal<NN_DIGIT> u,v,utoHH,uHH,uLL,s1out,s2out,s3out,s4out,mux1out,muxin1,muxin2,maxNNDIGIT;
+	sc_signal<NN_DIGIT> u,v,utoHH,uHH,uLH,s1out,s2out,s3out,s4out,mux1out,muxin1,muxin2,maxNNDIGIT;
 	sc_signal<bool> c1out;
 
 	
@@ -173,23 +173,22 @@ SC_MODULE(requiredPart)
 	subtractor s3,s4,s5;
 
 	
-	SC_CTOR (requiredPart) : R0in("R0in"), R1in("R1in"), R2in("R2in"), R3in("R3in"), R0out("R0out"), R1out("R1out"), R2out("R2out"), 
-	spl1("spl1"), m1("m1"), m2("m2"), to_hh("to_hh"), spl2("spl2"), s1("s1"), s2("s2"), c1("c1"),mux1("mux1"),s3("s3"),s4("s4"),s5("s5")
-
+	SC_CTOR (requiredPart) : spl1("spl1"), m1("m1"), m2("m2"), to_hh("to_hh"), spl2("spl2"), s1("s1"), s2("s2"), c1("c1"),mux1("mux1"),s3("s3"),s4("s4"),s5("s5")
+	{
 	 // Set signals for CHigh/CLow, u,v
-    spl1.a(cin); spl1.outHH(cHigh); spl1.outLH(cLow);
+    spl1.a(c); spl1.outHH(cHigh); spl1.outLH(cLow);
     m1.a(aHigh); m1.b(cHigh); m1.out(v);
     m2.a(aHigh); m2.b(cLow); m2.out(u); 
 
     // Signals for If statement
     to_hh.a(u); to_hh.out(utoHH);
-    s1.a(t0in); s1.b(utoHH); s1.out(out1);
+    s1.a(t0); s1.b(utoHH); s1.out(out1);
     maxNNDIGIT = MAX_NN_DIGIT; 
     s2.a(maxNNDIGIT); s2.b(utoHH); s2.out(s2out);
-    c1.a(RPout1); c1.b(s2out); c1.out(c1out);
+    c1.a(out1); c1.b(s2out); c1.out(c1out);
     muxin1.write(1); muxin2.write(0); 
     mux1.a(muxin1); mux1.b(muxin2); mux1.s(c1out); mux1.out(mux1out); 
-    s3.a(t1in); s3.b(mux1out); s3.out(s3out);
+    s3.a(t1); s3.b(mux1out); s3.out(s3out);
 
     // Signals for output t[1]
     spl2.a(u); spl2.outHH(uHH); spl2.outLH(uLH);
@@ -265,8 +264,8 @@ SC_MODULE(datapath)
 
 	SC_CTOR(datapath) : R0in("R0in"), R1in("R1in"), R2in("R2in"), R3in("R3in"), R0out("R0out"), R1out("R1out"), R2out("R2out"), RP("RP"), BP("BP")
 	{
-		R0in.a(from_sw0); R0in.load(loadInput); R0in.clock(clock); R0in.out(t0in);
-	    R1in.a(from_sw1); R1in.load(loadInput); R1in.clock(clock); R1in.out(t1in);
+		R0in.a(from_sw0); R0in.load(loadInput); R0in.clock(clock); R0in.out(t0inRP);
+	    R1in.a(from_sw1); R1in.load(loadInput); R1in.clock(clock); R1in.out(t1inRP);
 	    R2in.a(from_sw2); R2in.load(loadInput); R2in.clock(clock); R2in.out(cin);
 	    R3in.a(from_sw3); R3in.load(loadInput); R3in.clock(clock); R3in.out(aHighin);
 	    

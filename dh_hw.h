@@ -24,7 +24,7 @@ SC_MODULE (dh_hw)
   SC_CTOR (dh_hw) : DP("datapath")
   {
 
-	DP.from_sw0(from_sw0); 	DP.from_sw1(from_sw1);  DP.from_sw0(from_sw2);  DP.from_sw0(from_sw2);  
+	DP.from_sw0(from_sw0); 	DP.from_sw1(from_sw1);  DP.from_sw2(from_sw2);  DP.from_sw3(from_sw3);  
 	DP.loadInput(loadInput); DP.loadOutput(loadOutput); DP.readyBP(readyBP);
 	DP.clock(clock);
 	
