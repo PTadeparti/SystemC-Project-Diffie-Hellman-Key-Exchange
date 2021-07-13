@@ -469,24 +469,15 @@ NN_DIGIT c
   to_hw2.write(c);
   to_hw3.write(aHigh);
   hw_enable.write(true);
-  //std::cout << "enable in sw: " << hw_enable << std::endl;
-  // This computation is now performed in hardware.
-  /* Synchronization is done via blocking read/write 
-   (to be replaced by handshaking). */
- // std::cout << "here1" << std::endl;
-  while(!hw_done.read()) { wait(); }
- // std::cout << "here2 " << std::endl;
+  
+  // Handshaking
+  while(!hw_done.read()) { wait(); } 
   hw_enable.write(false);
   while(hw_done.read()) { wait(); }
 
   t[0] = from_hw0.read();
   t[1] = from_hw1.read();
-  aHigh = from_hw2.read();
-
- 
- 
- // std::cout << "here3" << std::endl;
-  
+  aHigh = from_hw2.read();  
 }
 
 /*** This function computes reference values for verification ***/
