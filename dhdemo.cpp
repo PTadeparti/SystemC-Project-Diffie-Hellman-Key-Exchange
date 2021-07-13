@@ -9,7 +9,7 @@ int sc_main(int argc , char *argv[]) {
   sc_signal <NN_DIGIT> ch0, ch1, ch2, ch4, ch5;
   sc_signal <NN_HALF_DIGIT> ch3, ch6;
 	
-	sc_signal <bool> enable, done, loadInput, loadOutput;
+	sc_signal <bool> enable, done, loadInput, loadOutput, readyBP;
 	enable.write(false);
 	done.write(false);
 //	loadInput.write(false);
@@ -40,6 +40,8 @@ int sc_main(int argc , char *argv[]) {
 	DH_HW.hw_done(done);               // hardware-done output
 	DH_HW.loadInput(loadInput);
 	DH_HW.loadOutput(loadOutput);
+	DH_HW.readyBP(readyBP);
+	
 
 	sc_start();
 
