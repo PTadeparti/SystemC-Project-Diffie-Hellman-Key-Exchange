@@ -14,7 +14,7 @@ SC_MODULE(dh_hw) {
     sc_out <NN_DIGIT> to_sw0, to_sw1;
     sc_out <NN_HALF_DIGIT> to_sw2;
 
-    sc_in <bool> hw_enable;
+    sc_in <bool> hw_enable, BPdone;
     sc_out <bool> hw_done, loadInput, loadOutput, readyBP;
 
     datapath DP;
@@ -31,6 +31,7 @@ SC_MODULE(dh_hw) {
         DP.loadInput(loadInput);
         DP.loadOutput(loadOutput);
         DP.readyBP(readyBP);
+        DP.BPdone(BPdone);
         DP.clock(clock);
 
         DP.to_sw0(to_sw0);

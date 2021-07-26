@@ -33,6 +33,50 @@ SC_MODULE(subtractor) {
 };
 
 template <typename T>
+SC_MODULE(equality) {
+    sc_in<NN_DIGIT> a;
+	sc_in<T> b;
+    sc_out<bool> out;
+
+    void runEquals() {
+        out.write(a.read() == b.read());
+    }
+
+    SC_CTOR(equality) {
+        SC_METHOD(runEquals);
+        sensitive << a << b;
+    }
+};
+
+SC_MODULE(OR) {
+    sc_in<NN_DIGIT> a, b;
+    sc_out<bool> out;
+
+    void runOr() {
+       (a == 1 || b == 1) ? out.write(1) : out.write(0);
+    }
+
+    SC_CTOR(OR) {
+        SC_METHOD(runOr);
+        sensitive << a << b;
+    }
+};
+
+SC_MODULE(AND) {
+    sc_in<NN_DIGIT> a, b;
+    sc_out<bool> out;
+
+    void runAnd() {
+       (a == 1 && b == 1) ? out.write(1) : out.write(0);
+    }
+
+    SC_CTOR(AND) {
+        SC_METHOD(runAnd);
+        sensitive << a << b;
+    }
+};
+
+template <typename T>
 SC_MODULE(multiplier) {
     sc_in<T> a, b;
     sc_out<NN_DIGIT> out;
@@ -113,6 +157,20 @@ SC_MODULE(splitter) {
     }
 };
 
+SC_MODULE(TO_NNDIGIT) {
+    sc_in<NN_HALF_DIGIT> a;
+    sc_out<NN_DIGIT> out;
+
+    void doTO_NNDIGIT() {
+        out.write((NN_DIGIT)()a.read());
+    }
+
+    SC_CTOR(TO_NNDIGIT) {
+        SC_METHOD(doTO_NNDIGIT);
+        sensitive << a;
+    }
+};
+
 SC_MODULE(TO_HH) {
     sc_in<NN_DIGIT> a;
     sc_out<NN_DIGIT> out;
@@ -145,7 +203,7 @@ SC_MODULE(requiredPart) {
     splitter<NN_DIGIT> spl2;
     subtractor s1, s2;
     comparator c1;
-    multiplexer mux1;
+    multiplexer mux1;    
     subtractor s3, s4, s5;
 
     SC_CTOR(requiredPart) : spl1("spl1"), m1("m1"), m2("m2"), to_hh("to_hh"), spl2("spl2"), s1("s1"), s2("s2"), c1("c1"), mux1("mux1"), s3("s3"), s4("s4"), s5("s5") 
@@ -206,34 +264,55 @@ SC_MODULE(bonusPart) {
     sc_in<bool> ready;
     sc_out <NN_DIGIT> T0new, T1new;
     sc_out<NN_HALF_DIGIT> AHnew;
+    sc_out<bool> bonusDone;
+    
+     // Internal signals for ease of use
+     
+    sc_signal<NN_DIGIT> addin, cLowHH, c1out, s2out, s3out, s4out, mux1out, muxin1, muxin2, maxNNDIGIT,mux1out,cHighNNDIGIT;
+    sc_signal<NN_HALF_DIGIT> cLow, cHigh;
+    sc_signal<bool> c1out,eq1out c2out,and1out,or1out,c3out;
 
-    void bonus_process() {
-        NN_DIGIT t[2], c;
-        NN_HALF_DIGIT aHigh, cLow, cHigh;
-        while (1) {
-            if (ready.read()) {
-                t[0] = T0.read();
-                t[1] = T1.read();
-                c = C.read();
-                aHigh = AH.read();
-                cHigh = (NN_HALF_DIGIT) HIGH_HALF(c);
-                cLow = (NN_HALF_DIGIT) LOW_HALF(c);
+	// Modules for loop
+    splitter<NN_HALF_DIGIT> spl1;       
+    TO_HH to_hh;   
+    comparator c1,c2;
+    equality<NN_HALF_DIGIT> eq1;
+    AND and1;
+    OR or1;    
+    
+    // Modules for computation
+    adder a1; 
+    multiplexer mux1;
+    TO_NNDIGIT tn1;
+    subtractor s1,s2,s3,s4;
+    comparator c3;
+    
 
-                while ((t[1] > cHigh) || ((t[1] == cHigh) && (t[0] >= TO_HIGH_HALF(cLow)))) {
-                    if ((t[0] -= TO_HIGH_HALF(cLow)) > MAX_NN_DIGIT - TO_HIGH_HALF(cLow)) t[1]--;
-                    t[1] -= cHigh;
-                    aHigh++;
-                }
-                T0new.write(t[0]);
-                T1new.write(t[1]);
-                AHnew.write(aHigh);
-            }
-            wait();
-        }
-    }
-
-    SC_CTOR(bonusPart) {
-        SC_CTHREAD(bonus_process, clock.pos());
+    SC_CTOR(bonusPart) : spl1("spl1"), to_hh("to_hh"),c1("c1"), c2("c2"), eq1("eq1"), and1("and1"), or1("or1"), 
+	a1("a1"),  mux1("mux1"), tn1("tn1"), s1("s1"), s2("s2"),  s3("s3"), s4("s4"), c3("c3")
+	{
+    	// Loop Initialization    	
+    	spl1.a(C); spl1.outHH(cHigh); spl1.outLH(cLow);
+    	to_hh.a(cLow); to_hh.out(cLowHH);
+    	c1.a(T1); c1.b(cHigh); c1.out(c1out);
+    	eq1.a(T1); eq1.b(cHigh); eq1.out(eq1out);
+    	c2.a(T0); c2.b(cLowHH); c2.out(c2out);
+    	and1.a(eq1out); and1.b(c2out); and1.out(and1out);
+    	or1.a(c1out); or1.b(and1out); or1.out(bonusDone);
+    	
+    	// Computation module initialization
+    	addin.write(1);
+    	a1.a(AH); a1.b(addin); a1.out(AHnew);
+    	s1.a(T0); s1.b(cLowHH); s1.out(T0new);
+    	s2.a(maxNNDIGIT); s2.b(cLowHH); s2.out(s2out);
+    	c3.a(s2out); c3.b(T0new); c3.out(c3out);
+    	muxin1.write(0); muxin2.write(1);
+    	mux1.a(muxin1); mux1.b(muxin2); mux1.s(c3out); mux1.out(mux1out);
+    	s3.a(T1); s3.b(mux1out); s3.out(s3out);
+    	tn1.a(cHigh); tn1.out(cHighNNDIGIT);
+    	s4.a(s3out); s4.b(cHighNNDIGIT); s4.out(T1new);  	
+    	
+       
     }
 };
 
@@ -248,6 +327,7 @@ SC_MODULE(datapath) {
     // Output Signals to Software
     sc_out<NN_DIGIT> to_sw0, to_sw1;
     sc_out<NN_HALF_DIGIT> to_sw2;
+    sc_out<bool> BPdone;
 
     sc_signal<NN_DIGIT> t0inRP, t1inRP, cin, t0outRP, t1outRP, t0outBP, t1outBP;
     sc_signal<NN_HALF_DIGIT> aHighin, aHighOutBP;
@@ -295,6 +375,7 @@ SC_MODULE(datapath) {
         BP.T0new(t0outBP);
         BP.T1new(t1outBP);
         BP.AHnew(aHighOutBP);
+        BP.bonusDone(BPdone);
 
         R0out.a(t0outBP);
         R0out.load(loadOutput);

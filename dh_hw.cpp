@@ -38,7 +38,7 @@ void dh_hw::process_hw()
 
             case EXECUTE_STATE_B:
                 readyBP.write(1);    	      
-                state = OUTPUT_STATE;
+                BPdone.read() ? state = OUTPUT_STATE : state = EXECUTE_STATE_B;
                 break;
 
             case OUTPUT_STATE:
